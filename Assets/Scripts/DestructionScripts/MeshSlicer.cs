@@ -1,16 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/*  MESH SLICER                                                                    */
+/*  - Runs when collision debugger calls Slice() function if model is cuttable     */
+/*  - Creates a horizontal cut through the mesh spltting the model into two pieces */
 public class MeshSlicer : MonoBehaviour
 {
-    // Helper class to hold mesh data
+    /*  MESH BUILDER                                                                  */
+    /*  - A private helper class                                                      */
+    /*  - accumulates raw mesh data into lists before converting it into a Unity Mesh */
     private class MeshBuilder
     {
+        //List of Verticeis, Normals, and UVs to make Triangles as well as a list of Triangles to make the mesh
         public List<Vector3> Vertices = new List<Vector3>();
         public List<Vector3> Normals = new List<Vector3>();
         public List<Vector2> UVs = new List<Vector2>();
         public List<int> Triangles = new List<int>();
 
+        // Appends one triangle's worth of data. 
+        // baseIndex records where in the vertex list this triangle starts, so the triangle indices correctly point to the three new vertices just added.
         public void AddTriangle(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 n1, Vector3 n2, Vector3 n3, Vector2 uv1, Vector2 uv2, Vector2 uv3)
         {
             int baseIndex = Vertices.Count;
@@ -20,6 +28,8 @@ public class MeshSlicer : MonoBehaviour
             Triangles.Add(baseIndex); Triangles.Add(baseIndex + 1); Triangles.Add(baseIndex + 2);
         }
 
+        // Converts the accumulated lists into an actual Unity Mesh object. 
+        // RecalculateBounds updates the mesh's bounding box, which Unity needs for rendering culling and physics.
         public Mesh ToMesh()
         {
             Mesh m = new Mesh();
@@ -32,6 +42,11 @@ public class MeshSlicer : MonoBehaviour
         }
     }
 
+    /* SLICE FUNCTION                                                    */
+    /*  - Main Slicing Algorithm                                         */
+    /*  - Creates a plane at contact location                            */
+    /*  - Finds which side of the plane the vertices are on              */
+    /*  - Generate two new meshes according to vertices position         */
     public static void Slice(GameObject target, Vector3 slicePoint, Vector3 sliceNormal)
     {
         MeshFilter sourceFilter = target.GetComponent<MeshFilter>();
@@ -139,20 +154,22 @@ public class MeshSlicer : MonoBehaviour
         Object.Destroy(target);
     }
 
+    // Dot product > 0 means we are on the side the normal is pointing to
     private static bool GetSide(Vector3 point, Vector3 planePoint, Vector3 planeNormal)
     {
-        // Dot product > 0 means we are on the side the normal is pointing to
+
         return Vector3.Dot(point - planePoint, planeNormal) >= 0;
     }
 
+    // Calculate the interpolation factor 'T' (0 to 1) where line crosses plane
     private static float GetT(Vector3 p1, Vector3 p2, Vector3 planePoint, Vector3 planeNormal)
     {
-        // Calculate the interpolation factor 't' (0 to 1) where line crosses plane
         float d1 = Vector3.Dot(p1 - planePoint, planeNormal);
         float d2 = Vector3.Dot(p2 - planePoint, planeNormal);
         return d1 / (d1 - d2);
     }
 
+    // Recreates the meshes two halfs the and adds all required components
     private static void ReplaceObject(GameObject original, MeshBuilder builder, string suffix)
     {
         if (builder.Vertices.Count == 0) return;
