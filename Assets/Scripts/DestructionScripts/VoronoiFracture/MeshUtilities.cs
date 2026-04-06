@@ -3,14 +3,25 @@ using System.Linq;
 using UnityEngine;
 using MIConvexHull;
 
+/*  MESH UTILITES CLASS                                                                                                     */
+/*  - Script filled with static classes for mesh operations when creating meshes after generating voronoi seeds and diagram */
 public static class MeshUtilities
 {
+
+    /*  CREATE CONVEX HULL MESH FUNCTION                                                                      */
+    /*  - Takes region vertices and wraps them in a convex hull mesh                                          */
+    /*  - Runs MICovexHull algorithm on the voronoi cells circumcenter vertices                               */
+    /*  - Computes the everage position of all hull points and wound to make it face outwards from the center */    
     public static Mesh CreateConvexHullMesh(IEnumerable<VoronoiVertex> regionVertices)
     {
-        List<VoronoiVertex> hullVertices = regionVertices.ToList();
+
+        List<VoronoiVertex> hullVertices = regionVertices.ToList(); // adds the regionVertices to a list of hullVertices
+        
+        // Runs MIConvexHull algorithm on voronoi cell's circumcenter points, if fails: return null
         var convexHull = ConvexHull.Create(hullVertices);
         if (convexHull == null || convexHull.Result == null) return null;
 
+        // Computes average position of hull
         Vector3 centroid = Vector3.zero;
         var pts = convexHull.Result.Points.ToList();
         foreach (var p in pts)
@@ -21,8 +32,10 @@ public static class MeshUtilities
         List<Vector3> vertices  = new List<Vector3>();
         List<int>     triangles = new List<int>();
 
+        // For each triangular face, check which was it is facing adn make it face outwards from the center
         foreach (var face in convexHull.Result.Faces)
         {
+            // Early break if face is bad
             if (face?.Vertices == null || face.Vertices.Length < 3) continue;
 
             Vector3 v0 = face.Vertices[0].toVector3();
@@ -35,12 +48,14 @@ public static class MeshUtilities
             int startIndex = vertices.Count;
             vertices.Add(v0); vertices.Add(v1); vertices.Add(v2);
 
+            // If vector dot is negative, the normal is facing inwards so flip
             if (Vector3.Dot(faceNormal, faceMid - centroid) < 0f)
             { triangles.Add(startIndex); triangles.Add(startIndex + 2); triangles.Add(startIndex + 1); }
             else
             { triangles.Add(startIndex); triangles.Add(startIndex + 1); triangles.Add(startIndex + 2); }
         }
-
+        
+        // Vertices there are no vertices, return null. Otherwise, create the mesh and return it
         if (vertices.Count == 0) return null;
 
         mesh.SetVertices(vertices);
@@ -49,12 +64,18 @@ public static class MeshUtilities
         return mesh;
     }
 
+    /*  IS MESH WATER-TIGHT FUNCTION                                                             */
+    /*  - Checks that every edge in the mesh is connected to exactly 2 triangles                 */
+    /*  - If all edges are connected to exactly 2 triangles, then return true, else return false */
     public static bool IsMeshWatertight(Mesh mesh)
     {
+        // Get list of mesh vertices, triangles, and numbe rof edges
         Vector3[] verts = mesh.vertices;
         int[]     tris  = mesh.triangles;
-        Dictionary<(long, long), int> edgeCount = new Dictionary<(long, long), int>();
+        Dictionary<(long, long), int> edgeCount = new Dictionary<(long, long), int>(); // Map of edge to how many times the edge appears
 
+        // For each edge in each triangle, create an unordered pair where the smaller key is first
+        // If the same edge is shared between two triangles, it will still map to the same dictionary key
         for (int i = 0; i < tris.Length; i += 3)
             for (int e = 0; e < 3; e++)
             {
@@ -63,16 +84,22 @@ public static class MeshUtilities
                 var  key  = keyA < keyB ? (keyA, keyB) : (keyB, keyA);
                 edgeCount[key] = edgeCount.TryGetValue(key, out int c) ? c + 1 : 1;
             }
-
+        
+        // If all edge counts is shared by exactly two triangles, then return true. Otherwise, return false
         return edgeCount.Values.All(c => c == 2);
     }
 
+    /*  GET MESH VOLUME FUNCTION                                                                                             */
+    /*  - Uses the divergence theorem to compute teh volume of the mesh from it's triangle                                   */
+    /*  - Filters out degenerate cells that passed the water-tight check but is still too small to spawn as a physics object */
     public static float GetMeshVolume(Mesh mesh)
-    {
+    {   
+        // Get list of mesh vertices and triangles. Also initialise volume variable
         float    volume = 0f;
         Vector3[] verts = mesh.vertices;
         int[]     tris  = mesh.triangles;
 
+        // For each triangle, calculate the volume
         for (int i = 0; i < tris.Length; i += 3)
         {
             Vector3 v0 = verts[tris[i]];
@@ -80,6 +107,7 @@ public static class MeshUtilities
             Vector3 v2 = verts[tris[i + 2]];
             volume += Vector3.Dot(v0, Vector3.Cross(v1, v2));
         }
+        // Returns absolute volume to ignore winding direction
         return Mathf.Abs(volume) / 6f;
     }
 

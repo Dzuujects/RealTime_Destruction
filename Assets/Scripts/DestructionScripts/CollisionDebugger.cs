@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/*                        COLLISION DEBUGGER                       */
+/*  COLLISION DEBUGGER                                             */
 /*  - Component attached to the model                              */
 /*  - Used to debug collision and activate the fracture algorithm  */
 
@@ -32,7 +32,7 @@ public class CollisionDebugger : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
    
-    /*                             COLLISION DETECTION FUNCTION                               */
+    /*  COLLISION DETECTION FUNCTION                                                          */
     /*  - Uses Unity Engine's built in collision detection (Nvidia PhysX Physics Engine)      */
     /*  - On collision, get the impulse force of the incoming projectile                      */
     /*  - If the force is greater than the minimum speed and the impulse threshold then break */

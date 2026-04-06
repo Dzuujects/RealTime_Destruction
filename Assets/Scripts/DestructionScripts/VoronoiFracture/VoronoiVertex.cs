@@ -1,6 +1,10 @@
 using UnityEngine;
 using MIConvexHull;
 
+/*  VORONOI VERTEX INTERFACE CLASS                                                                                      */
+/*  - Data container representing a 3D point in space                                                                   */
+/*  - Used to bridge between MIConvexHUll and Unity differing coordinate representations                                */
+/*  - Implements IVertex interface from MIConvexHull and uses a toVector3() to allow Unity to handle without issues     */
 public class VoronoiVertex : IVertex
 {
     public double[] Position { get; set; }
