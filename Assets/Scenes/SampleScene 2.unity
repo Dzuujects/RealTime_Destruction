@@ -217,7 +217,7 @@ MonoBehaviour:
   drawDuration: 5
   minSpeed: 1
   impulseThreshold: 75
-  Cuttable: 0
+  Cuttable: 1
   seedCount: 10
 --- !u!54 &104890669
 Rigidbody:

@@ -5,7 +5,7 @@ using UnityEngine;
 /*  VORONOI SEED GENERATOR CLASS                                                                                                */
 /*  - Generate Seeds and Circumcenters on the mesh to be sliced later                                                           */
 /*  - It firsts generates seeds inside the models bounding box being biased near the contact location                           */
-/*  - Then it uses Delaunay Triangulation to create vertices around the seed locations leading to a voronoi diagram   */
+/*  - Then it uses Delaunay Triangulation to create vertices around the seed locations leading to a voronoi diagram             */
 public static class VoronoiSeedGenerator
 {
     /*  GENERATE SEED FUNCTION                                                                                                  */

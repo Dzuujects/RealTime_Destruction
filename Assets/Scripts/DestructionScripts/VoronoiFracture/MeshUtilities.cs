@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using MIConvexHull;
+using Unity.VisualScripting;
 
 /*  MESH UTILITES CLASS                                                                                                     */
 /*  - Script filled with static classes for mesh operations when creating meshes after generating voronoi seeds and diagram */
@@ -111,12 +112,19 @@ public static class MeshUtilities
         return Mathf.Abs(volume) / 6f;
     }
 
+    /*  FILL OPEN BOUNDARIES FUNCTION                                                                                       */
+    /*  - Fill in holes once CSG intersection has run                                                                       */
+    /*  - Checks for mapping where edge A->B exists but not B->A and builds a linked list of all open boundary vertex       */
+    /*  - Adds vertex at the center of the bounding loop to create triangles to fill the gap                                */
+    /*  - Then checks the normals of the face to see if it is facing from the center. Flip triangles if not facing outwards */
     public static Mesh FillOpenBoundaries(Mesh mesh)
     {
+        // Get list of vertices, triangles and uv of the mesh
         Vector3[] origVerts = mesh.vertices;
         int[]     origTris  = mesh.triangles;
         Vector2[] origUVs   = mesh.uv;
 
+        // Stores every edge of every triangle in order
         Dictionary<(long, long), bool> directedEdges = new Dictionary<(long, long), bool>();
         for (int i = 0; i < origTris.Length; i += 3)
             for (int e = 0; e < 3; e++)
@@ -145,18 +153,24 @@ public static class MeshUtilities
                 }
             }
 
+        // If there is no boundary vertices, return mesh
         if (boundaryNext.Count == 0) return mesh;
 
+        // Boundary loops list and visited list to keep track of bounding
         List<List<int>> loops   = new List<List<int>>();
         HashSet<long>   visited = new HashSet<long>();
 
+        //For each boundary vertex
         foreach (long startKey in boundaryNext.Keys)
         {
+
+            // Bypass if already visited, if not add list and set current vertex to current
             if (visited.Contains(startKey)) continue;
             List<int> loop    = new List<int>();
             long      current = startKey;
             int       safety  = 0;
 
+            // While not visited: add to visited and loop then go to the next one
             while (!visited.Contains(current) && safety++ < 10000)
             {
                 visited.Add(current);
@@ -167,13 +181,16 @@ public static class MeshUtilities
             if (loop.Count >= 3) loops.Add(loop);
         }
 
+        // Create a new list of vertices and triangles using the original vertices and triangles
         List<Vector3> newVerts = new List<Vector3>(origVerts);
         List<int>     newTris  = new List<int>(origTris);
 
+        // Initialise a center vertex
         Vector3 meshCentroid = Vector3.zero;
         foreach (var v in origVerts) meshCentroid += v;
         meshCentroid /= Mathf.Max(1, origVerts.Length);
 
+        // Calculate the ceneter of the boundary loop
         foreach (List<int> loop in loops)
         {
             Vector3 loopCentroid = Vector3.zero;
@@ -198,6 +215,7 @@ public static class MeshUtilities
             }
         }
 
+        // Initialised new UVs and return the filled in mesh
         Vector2[] newUVs = new Vector2[newVerts.Count];
         for (int i = 0; i < origUVs.Length && i < newUVs.Length; i++)
             newUVs[i] = origUVs[i];
@@ -211,16 +229,22 @@ public static class MeshUtilities
         return filled;
     }
 
+    /*  ENSURE DOUBLE SIDED CAPS FUNCTION                                          */
+    /*  - Final winding order checks that runs on spawned chunks                   */
+    /*  - Re-examines all triangles on spawned chunks and flip any that are inward */
     public static Mesh EnsureDoubleSidedCaps(Mesh mesh)
     {
+        // Gets the vertices, triangles, and UVs of the original mesh
         Vector3[] origVerts   = mesh.vertices;
         int[]     origTris    = mesh.triangles;
         Vector2[] origUVs     = mesh.uv;
 
+        // Gets the center vertex of the chunk
         Vector3 centroid = Vector3.zero;
         foreach (var v in origVerts) centroid += v;
         centroid /= origVerts.Length;
 
+        // Checks each triangle and if it points towards the centroid: add to bad triangles list
         List<int> badTris = new List<int>();
         for (int i = 0; i < origTris.Length; i += 3)
         {
@@ -232,6 +256,7 @@ public static class MeshUtilities
             if (Vector3.Dot(normal, mid - centroid) < 0) badTris.Add(i);
         }
 
+        // Then for each bad triangle, flip the triangles and add to a new 'fixed' list
         int[] fixedTris = (int[])origTris.Clone();
         foreach (int i in badTris)
         {
@@ -240,6 +265,7 @@ public static class MeshUtilities
             fixedTris[i + 2] = tmp;
         }
 
+        // Create a mesh that uses the fixed mesh
         Mesh fixedMesh = new Mesh();
         fixedMesh.vertices  = origVerts;
         fixedMesh.triangles = fixedTris;
@@ -249,6 +275,9 @@ public static class MeshUtilities
         return fixedMesh;
     }
 
+    /*  POSITION KEY FUNCTION                                                  */
+    /*  - Converts a Vector3 into a long integer                               */
+    /*  - Used to compare vertex position by value instead of object reference */
     public static long PositionKey(Vector3 v)
     {
         int x = Mathf.RoundToInt(v.x * 10000f);
