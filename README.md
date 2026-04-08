@@ -50,7 +50,7 @@ RealTime Destruction is a Unity project that demonstrates advanced real-time mes
    - Ensure all dependencies in `Packages/manifest.json` are installed.
    - Add MIConvexHull if not present.
 4. **Run the Scene:**
-   - Open a demo scene.
+   - Open a demo scene in one of the evaluations test scenarios.
    - Enter Play mode and fire projectiles at destructible objects.
 
 ## Customization
@@ -69,6 +69,3 @@ RealTime Destruction is a Unity project that demonstrates advanced real-time mes
 - C# port by Karl Henkel (Parabox)
 - MIConvexHull by DesignEngrLab
 
-## License
-
-This project is licensed under the MIT License. See source files for details.
