@@ -1,22 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class FireProjectile : MonoBehaviour
 {
     public Camera playerCamera;
     public GameObject projectilePrefab;
     public float projectileSpeed = 10f;
+    public float altProjectileSpeed = 20f;
 
     void Update()
     {
+
         if (Input.GetMouseButtonDown(0))
         {
-            SpawnProjectile();
+            SpawnProjectile(projectileSpeed);
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            SpawnProjectile(altProjectileSpeed);
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
-    void SpawnProjectile()
+    void SpawnProjectile(float speed)
     {
         // Spawn position slightly in front of camera to avoid collision
         Vector3 spawnPos = playerCamera.transform.position + 
@@ -29,7 +42,7 @@ public class FireProjectile : MonoBehaviour
         );
 
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
-        rb.velocity = playerCamera.transform.forward * projectileSpeed;
+        rb.velocity = playerCamera.transform.forward * speed;
     }
 }
 

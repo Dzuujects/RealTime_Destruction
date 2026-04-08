@@ -218,7 +218,7 @@ MonoBehaviour:
   minSpeed: 1
   impulseThreshold: 75
   Cuttable: 0
-  seedCount: 10
+  seedCount: 20
 --- !u!54 &104890669
 Rigidbody:
   m_ObjectHideFlags: 0
