@@ -4,6 +4,8 @@
 
 RealTime Destruction is a Unity project that demonstrates advanced real-time mesh destruction and fracturing techniques. The system allows objects to be fractured dynamically at runtime using Constructive Solid Geometry (CSG) and Voronoi-based algorithms, enabling realistic destruction effects for physics-based gameplay.
 
+Slides for explaination and evaluation [here](https://github.com/Dzuujects/RealTime_Destruction)
+
 ## Features
 
 - **Projectile Firing:** Fire projectiles from the player camera to interact with destructible objects.
